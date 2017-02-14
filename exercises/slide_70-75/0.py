@@ -11,7 +11,7 @@ project = angr.Project("fauxware")
 
 # WRITEME: generate an accurate CFG
 # since we want to see its program states generated during CFG recovery, we should specify 'keep_state=True'
-cfg = None
+cfg = project.analyses.CFGAccurate(keep_state=True)
 
 # Alright, we got it!
 if cfg is not None:
@@ -19,4 +19,3 @@ if cfg is not None:
 
     for n in all_nodes:
         print("%s:\t\tstate %s, eax %s, ecx %s" % (n, n.input_state, n.input_state.regs.eax, n.input_state.regs.ecx))
-

@@ -11,18 +11,21 @@ project = angr.Project("overflow", load_options={ 'auto_load_libs': False })
 # 4. The return address has been partially overflowed, and still points inside the program (future work)
 def path_vuln_filter(path):
     # get the saved instruction pointer from the stack
-    pass
+    saved_eip = path.state.memory.load(path.state.regs.ebp + 0x4, 0x4, endness="Iend_LE")
     print "Checking saved EIP:", saved_eip
 
     # first, check if the return address points to a hook. If this is intact, then we assume there is no overflow
-    pass
+    if project.is_hooked(path.state.se.any_int(saved_eip)):
+        return False
 
     # next, create constraints representing an unsafe condition. In this case,
     # let's check if the return address can point *outside* of the program.
-    pass
+    se = path.state.se
+    sec_text = project.loader.main_bin.sections_map[u'.text']
+    unsafe_eip = [se.Or(saved_eip < sec_text.min_addr, saved_eip > sec_text.max_addr)]
 
     # check if the state is satisfiable with these conditions, and return True if it is
-    pass
+    return se.satisfiable(extra_constraints=unsafe_eip)
 
 # get a new path group from the project factory
 path_group = project.factory.path_group()
@@ -40,12 +43,13 @@ while path_vuln_filter(path_group.active[0]):
 print "Searching for the vulnerability!"
 while not path_group.vuln:
     # step the path group
-    pass
+    path_group.step()
     # after each step, move all paths matching our vuln filter from the active stash to the vuln stash
-    pass
+    path_group.move('active', 'vuln', filter_func=path_vuln_filter)
 
 # now synthesize our crashing input
-pass
+controlled_path = path_group.vuln[0]
+crashing_input = controlled_path.state.posix.dumps(0)
 open("crashing_input", "w").write(crashing_input)
 print "You can crash the program by doing:"
 print "# cat crashing_input | ./overflow"

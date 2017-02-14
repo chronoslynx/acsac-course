@@ -14,16 +14,17 @@ import angr
 project = angr.Project("fauxware")
 
 # WRITEME: generate a CFG first so we have access to all functions
-cfg = None
+cfg = project.analyses.CFG()
 
 # WRITEME: get the address of the main function
-main_func = None
+main_func = cfg.kb.functions['main'].addr
 
 # WRITEME: run VFG on it
 # Here is the suggested parameter setup
 # context_sensitivity_level: 3
 # interfunction_level: 3
-vfg = None
+vfg = project.analyses.VFG(cfg, function_start=main_func,
+                           context_sensitivity_level=3, interfunction_level=3)
 print("VFG analysis is over. We have some nodes now:")
 if vfg is not None:
     pprint(vfg.graph.nodes())
@@ -31,24 +32,24 @@ if vfg is not None:
 # WRITEME: get the input state to the very last basic block
 # the very last basic block in the main function is 0x80486e8
 # it should have captured all previous effects
-last_node = None
-last_state = None
+last_node = vfg.get_any_node(0x80486e8)
+last_state = last_node.state
 
 # WRITEME: Get the memory object.
 # the memory used in static analysis is an abstract memory model (implemented in SimAbstractMemory)
 # it's basically a mapping from region names (like "stack_0x400000") to a symbolic memory instance (SimSymbolicMemory)
-memory = None
+memory = last_state.memory
 print("Program memory of the very last state: %s" % memory)
 
 # WRITEME: Let's take a look at the regions
-regions = None
+regions = memory.regions
 print("All memory regions on the stack:")
 pprint(regions)
 
 if regions is not None:
     # WRITEME: Now we can have a look at the abstract locations (alocs) of the main function's stack region
-    main_func_region = None
-    alocs = None
+    main_func_region = regions['stack_{}'.format(hex(main_func))]
+    alocs = main_func_region.alocs
 
     print("Abstract locations of the main procedure are:")
     pprint(alocs)
@@ -67,4 +68,3 @@ if regions is not None:
     print("The stack layout looks like:")
     for offset in sorted(stack_layout.keys(), reverse=True):
         print("%#x %s" % (offset, stack_layout[offset]))
-

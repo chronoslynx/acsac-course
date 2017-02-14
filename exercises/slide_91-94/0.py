@@ -13,9 +13,9 @@ import angr
 p = angr.Project("fauxware")
 
 # WRITEME: get the address of function `authenticate`
-cfg_fast = None
-main_func = None
-auth_func = None
+cfg_fast = p.analyses.CFGFast()
+main_func = cfg_fast.kb.functions['main'].addr
+auth_func = cfg_fast.kb.functions['authenticate'].addr
 
 # Note: we create a new knowledge base to use with CFGAccurate and DDG analysis
 # we don't want to mess with the default (project-level) knowledge base
@@ -27,10 +27,12 @@ kb = angr.knowledge_base.KnowledgeBase(p, p.loader.main_bin)
 # starts=(main_func,addr,)
 # context_sensitivity_level=2
 # keep_state=True  # states must be kept and stored to allow dependence analysis later
-cfg = None
+cfg = p.analyses.CFGAccurate(starts=(main_func,),
+                             context_sensitivity_level=2,
+                             keep_state=True)
 
 # WRITEME: initialize DDG analysis with the accurate CFG and the new knowledge base, and specify the `start`
-ddg = None
+ddg = p.analyses.DDG(cfg=cfg, start=auth_func, kb=kb)
 
 if ddg is not None:
     # YES it's done! Let's see what's there
@@ -48,4 +50,3 @@ if ddg is not None:
     print("Edges:")
     edges = ddg.simplified_data_graph.edges(data=True)
     pprint(edges, width=120)
-

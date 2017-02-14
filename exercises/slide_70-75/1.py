@@ -12,7 +12,7 @@ import angr
 project = angr.Project('fauxware')
 
 # WRITEME: to generate a normalized CFG, simply specify `normalize=True` during initialization
-cfg_norm = None
+cfg_norm = project.analyses.CFG(normalize=True)
 
 # this is a normal CFG
 cfg = project.analyses.CFG()
@@ -31,4 +31,3 @@ if cfg_norm is not None:
 
     assert nodes_only_in_normalized
     pprint(nodes_only_in_normalized)
-
